@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/*
+ * Light-only app. These tokens are the single place to re-theme it: warm neutrals,
+ * hairline borders and one accent (solar amber), used sparingly.
+ */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-canvas: #fafaf9;
+  --color-surface: #ffffff;
+  --color-subtle: #f3f3f1;
+  --color-line: #ebeae6;
+  --color-line-strong: #dddcd6;
+  --color-ink: #111214;
+  --color-muted: #75757d;
+  --color-faint: #a3a3a9;
+  --color-sun: #f5b301;
+  --color-sun-soft: #fff6d6;
+  --color-sun-ink: #8a6400;
+  --color-good: #16a34a;
+  --color-bad: #dc2626;
+  --color-panel: #10141f;
+  --color-panel-line: #222838;
+  --color-panel-muted: #8b93a7;
+
+  /* Snappy ease-out for UI motion: fast start, gentle settle. */
+  --ease-snappy: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --shadow-card: 0 1px 2px rgb(17 18 20 / 0.04), 0 0 0 1px rgb(17 18 20 / 0.05);
+  --shadow-pop: 0 12px 32px -8px rgb(17 18 20 / 0.18), 0 0 0 1px rgb(17 18 20 / 0.06);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-sun-soft);
+}
+
+/* Range sliders (scenario panel): thin track, amber fill, white thumb. */
+input[type="range"].range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-ink) var(--fill, 50%), var(--color-line) var(--fill, 50%));
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].range:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+input[type="range"].range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--color-line-strong);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  transition: transform 150ms var(--ease-snappy);
+}
+input[type="range"].range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+input[type="range"].range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--color-line-strong);
+}
+input[type="range"].range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-sun);
+  outline-offset: 2px;
+}
+
+/* MapLibre popup restyle to match the dark panel. */
+.maplibregl-popup-content {
+  background: var(--color-panel) !important;
+  color: #fff;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25) !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--color-panel) !important;
+  border-bottom-color: var(--color-panel) !important;
+}
+
+@keyframes progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+.animate-progress {
+  animation: progress 1s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------- live mode */
+
+/* Ripple drawn on the map where a live event happens; plays once, then stays invisible. */
+.map-pulse {
+  position: relative;
+  display: block;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.map-pulse::before,
+.map-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid var(--c);
+  opacity: 0;
+  animation: ripple 2.2s ease-out forwards;
+}
+.map-pulse::after {
+  animation-delay: 0.45s;
+}
+@keyframes ripple {
+  0% { transform: scale(0.6); opacity: 0.95; }
+  100% { transform: scale(5); opacity: 0; }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes live-dot {
+  0% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0.7); }
+  100% { box-shadow: 0 0 0 10px rgb(34 197 94 / 0); }
+}
+.live-dot {
+  animation: live-dot 1.4s ease-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 220ms var(--ease-snappy);
+}
+
+/* Brief highlight when a live counter changes. */
+@keyframes flash {
+  0% { background-color: var(--color-sun-soft); }
+  100% { background-color: transparent; }
+}
+.animate-flash {
+  animation: flash 1.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-pulse::before, .map-pulse::after, .animate-slide-in, .live-dot, .animate-fade-up, .animate-flash {
+    animation: none;
+  }
+}
