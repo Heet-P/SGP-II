@@ -1,0 +1,10 @@
+file,column,type,meaning,source_or_derivation,production_rule
+02_maharera_projects_real_sample.csv,maharera_registration_no,string,MahaRERA registration identifier,MahaRERA,Keep as source key
+02_maharera_projects_real_sample.csv,project_name,string,Registered project name,MahaRERA,Do not normalize away original text
+03_society_building_context.csv,estimated_building_area_m2,float,Average estimated building footprint proxy,Synthetic/Open Buildings-compatible schema,Replace with actual geometry-derived value
+04_society_energy_monthly_synthetic.csv,energy_consumption_kwh,float,Monthly aggregate electricity consumption,Synthetic calibrated profile,Replace with client/licensee meter aggregation
+05_society_features_ranked.csv,distance_to_farm_km,float,Haversine distance from farm reference point,Derived from estimated coordinates,Use precise society coordinates in production
+05_society_features_ranked.csv,capacity_fit_ratio,float,How well expected society load fits available farm capacity,Derived,Keep formula configurable
+05_society_features_ranked.csv,conversion_probability_synthetic,float,Synthetic probability scaffold,Synthetic,Never treat as production probability
+05_society_features_ranked.csv,priority_score_synthetic,float,Transparent baseline lead score,Derived from synthetic inputs,Use as baseline against ML
+06_outreach_outcomes_synthetic.csv,converted,integer,Binary conversion outcome,Synthetic,Replace with real CRM label

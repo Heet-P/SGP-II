@@ -1,0 +1,57 @@
+1. Optimization problem 
+    -> Fields required : (Divide to 2 tables : Society details & Consumption details)
+        i) Society name 
+        ii) Pincode  
+        iii) District
+        iv) City
+        v) Current Provider Board (Boolean)
+        vi) Monthly Consumption
+        vii) Per Unit Price
+        viii) Distance from solar farm (km) / one version with distance / one version without distance 
+        (mapple.com , maplibre , isro-bhumi)
+        ix) no of flats per society 
+            -> No of active and inactive flats (only consider active flats)
+        x) Projected monthly savings
+        
+    -> Decision making fields:
+        -> FK to Societies ID (0th field of 'fields required')
+        i) Current Provider Board (Boolean)
+        Ii) Monthly Consumption
+        III) Per Unit Price
+        iv) Distance from solar farm (km) / one version with distance / one version without distance 
+        (mapple.com , maplibre , isro-bhumi)
+        v) no of flats per society 
+        VI) No of active flats 
+        vii) projected monthly savings
+
+
+      -> Assume solar farm capacity
+        Find out if older then 'x' societies can handle solar or not 
+            if true : do not consider them
+            else : consider them 
+
+     -> Think more on total flats v/s active flats in final decision.
+
+
+2. Chain of models 
+    -> First model gives probability for each rows 
+        -> Model : LR (Logistic Regression), XGBoost
+        
+    -> Second model checks again on decision making fields and makes combination
+        ->Output : List of ID's 
+        ->Model : (Research about this !) ( Find clustering based on which (one of the ways ))
+    -> Third model checks the combinations and give avg conversion probabilty and gives outputs as :  ( high risk , low reward  ) , (low risk , low reward ) etc etc
+        ->Model: Sequential lr / Sequential XGBoost 
+
+(Research about other models too in this...)
+
+
+3. Assumptions : (Take synthetic data)
+    i) Overall capacity of generation
+    ii) Charge of  generation per unit 
+    iii) Cost of tranfering unit per km 
+    iv) Markup 
+
+4. Task :
+--> 
+    
