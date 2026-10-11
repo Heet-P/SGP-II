@@ -1,12 +1,10 @@
 """Scenario scoring: eligibility, quadrants and capacity allocation."""
 
-from functools import lru_cache
-
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from .mock_data import explain, haversine_km, load_societies
+from .dataset import explain, load_societies
 
 FARM_SITES = [
     {"id": "pune", "name": "Pune (reference site)", "lat": 18.5204, "lon": 73.8567},
@@ -34,7 +32,12 @@ class ScenarioParams(BaseModel):
     top_n: int = Field(20, ge=1, le=100)
 
 
-@lru_cache
+def haversine_km(lat1, lon1, lat2, lon2):
+    lat1, lon1, lat2, lon2 = map(np.radians, (lat1, lon1, lat2, lon2))
+    a = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+    return 6371 * 2 * np.arcsin(np.sqrt(a))
+
+
 def _base() -> pd.DataFrame:
     return load_societies()
 

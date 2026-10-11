@@ -56,8 +56,6 @@ export default function Sidebar({ params, sites, onChange }: Props) {
             format={(v) => v.toFixed(0)} onChange={(v) => onChange({ max_distance_km: v })} />
           <Slider label="Max building age" unit="yrs" value={params.max_age_years} min={5} max={45} step={1}
             format={(v) => v.toFixed(0)} onChange={(v) => onChange({ max_age_years: v })} />
-          <Slider label="Min active flats" unit="%" value={params.min_active_pct} min={0} max={100} step={5}
-            format={(v) => v.toFixed(0)} onChange={(v) => onChange({ min_active_pct: v })} />
         </Section>
 
         <p className="text-xs leading-relaxed text-panel-muted">

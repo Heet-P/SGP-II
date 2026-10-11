@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { inr, inrShort, pct } from "@/lib/format";
+import Contributions from "@/components/Contributions";
+import { inr, inrShort, num, pct } from "@/lib/format";
 import { quadrantColor } from "@/lib/quadrants";
 import type { Lead, ScenarioResult, Society } from "@/lib/types";
 
@@ -67,7 +68,7 @@ function Card({ rank, s, lead, onLocate }: { rank: number; s: Society; lead: Lea
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
           <Stat label="Converts" value={pct(s.prob)} />
           <Stat label="Saves / month" value={inrShort(s.monthly_savings)} />
-          <Stat label="Active flats" value={`${s.active_flats} / ${s.num_flats}`} />
+          <Stat label="Flats" value={num(s.num_flats)} />
           <Stat label="Distance" value={`${Math.round(s.distance_km)} km`} />
         </dl>
         <button onClick={() => onLocate(s.id)} className="mt-4 text-xs font-medium text-[#8a6400] hover:underline">
@@ -98,37 +99,6 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="text-xs text-muted">{label}</dt>
       <dd className="text-lg font-semibold tabular-nums">{value}</dd>
-    </div>
-  );
-}
-
-/** Diverging bars: how much each feature pushed the conversion score up or down. */
-function Contributions({ items }: { items: Lead["contributions"] }) {
-  const sorted = [...items].sort((a, b) => b.value - a.value);
-  const max = Math.max(...items.map((c) => Math.abs(c.value)), 0.01);
-  return (
-    <div>
-      <h4 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted">Why this score</h4>
-      <ul className="space-y-2">
-        {sorted.map((c) => {
-          const w = `${(Math.abs(c.value) / max) * 50}%`;
-          const pos = c.value >= 0;
-          return (
-            <li key={c.feature} className="grid grid-cols-[140px_1fr] items-center gap-3 text-xs">
-              <span className="truncate text-muted">{c.feature}</span>
-              <span className="relative h-3.5">
-                <span className="absolute inset-y-0 left-1/2 w-px bg-line" />
-                <span
-                  className={`absolute inset-y-0 rounded-sm ${pos ? "bg-green-600" : "bg-red-500"}`}
-                  style={pos ? { left: "50%", width: w } : { right: "50%", width: w }}
-                  title={`${c.value >= 0 ? "+" : ""}${c.value.toFixed(2)}`}
-                />
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-2.5 text-[11px] text-muted">Green pushes the conversion chance up; red pulls it down.</p>
     </div>
   );
 }

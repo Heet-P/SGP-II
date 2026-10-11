@@ -120,7 +120,7 @@ export default function LeadMap({ result, focusId, onFocus }: Props) {
               <div className="text-[12px] leading-relaxed">
                 <div className="text-[13px] font-semibold">{popup.name}</div>
                 <div className="text-panel-muted">
-                  {popup.city} · {popup.num_flats} flats ({popup.active_flats} active)
+                  {popup.city} · {popup.num_flats} flats
                 </div>
                 <div className="mt-1">
                   Saves <b>{inr(popup.monthly_savings)}</b>/mo · converts <b>{pct(popup.prob)}</b>
@@ -147,6 +147,7 @@ export default function LeadMap({ result, focusId, onFocus }: Props) {
           </ul>
           <p className="mt-3 text-xs leading-relaxed text-muted">
             Large outlined dots fit inside the farm&apos;s capacity. The dashed ring is the distance limit.
+            Positions are approximate (city level).
           </p>
         </div>
         <div>

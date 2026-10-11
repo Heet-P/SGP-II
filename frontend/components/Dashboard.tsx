@@ -5,9 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import KpiCards from "@/components/KpiCards";
 import LeadCards from "@/components/LeadCards";
+import LiveModel from "@/components/LiveModel";
 import RiskReward from "@/components/RiskReward";
 import Sidebar from "@/components/Sidebar";
+import DatasetReview from "@/components/DatasetReview";
 import { API_URL, getFarmSites, runScenario } from "@/lib/api";
+import { useLiveModel } from "@/lib/live";
 import type { FarmSite, ScenarioParams, ScenarioResult } from "@/lib/types";
 
 // MapLibre needs `window`, so the map only renders in the browser.
@@ -30,6 +33,8 @@ const DEFAULT_PARAMS: ScenarioParams = {
 };
 
 const TABS = [
+  { id: "data", label: "Dataset" },
+  { id: "live", label: "Live model" },
   { id: "map", label: "Lead map" },
   { id: "quad", label: "Risk vs reward" },
   { id: "leads", label: "Top leads" },
@@ -42,8 +47,11 @@ export default function Dashboard() {
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("map");
+  // The demo opens on the dataset review; Start begins the live stream.
+  const [tab, setTab] = useState<Tab>("data");
   const [focusId, setFocusId] = useState<string | null>(null);
+  // The live stream runs for the whole session, so switching tabs doesn't reset it.
+  const live = useLiveModel();
 
   useEffect(() => {
     getFarmSites().then(setSites).catch(() => {});
@@ -79,60 +87,91 @@ export default function Dashboard() {
     setTab("map");
   };
 
+  const startDemo = () => {
+    if (!live.started) live.start();
+    setTab("live");
+  };
+
+  const nav = (
+    <nav className="mb-4 inline-flex rounded-lg border border-line bg-surface p-1">
+      {TABS.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => setTab(t.id)}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+            tab === t.id ? "bg-ink text-white" : "text-muted hover:text-ink"
+          }`}
+        >
+          {t.id === "live" && (
+            <span className={`mr-2 inline-block h-2 w-2 rounded-full ${live.connected ? "bg-green-500" : "bg-muted/50"}`} />
+          )}
+          {t.label}
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <Sidebar params={params} sites={sites} onChange={(patch) => setParams((p) => ({ ...p, ...patch }))} />
+      {tab !== "data" && (
+        <Sidebar params={params} sites={sites} onChange={(patch) => setParams((p) => ({ ...p, ...patch }))} />
+      )}
 
       <main className="relative min-w-0 flex-1 px-5 py-6 lg:px-9 lg:py-8">
-        {loading && (
-          <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden">
-            <div className="animate-progress h-full w-1/3 bg-sun" />
-          </div>
-        )}
-
-        <header className="mb-6">
-          <h1 className="text-[28px] font-semibold tracking-tight">Who should we pitch first?</h1>
-          <p className="mt-1 text-[15px] text-muted">
-            {result
-              ? <>Ranking housing societies for a <b className="text-ink">{result.params.capacity_mw} MW</b> farm
-                  at <b className="text-ink">{result.farm.name}</b>.</>
-              : "Loading scenario…"}
-          </p>
-        </header>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Can&apos;t reach the API at <code className="font-mono">{API_URL}</code> ({error}). Start it with{" "}
-            <code className="font-mono">uvicorn app.main:app --reload</code> from the <code>backend</code> folder.
-          </div>
-        )}
-
-        {result && (
+        {tab === "data" ? (
           <>
-            <KpiCards kpis={result.kpis} />
-
-            <nav className="mt-7 mb-4 inline-flex rounded-lg border border-line bg-surface p-1">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                    tab === t.id ? "bg-ink text-white" : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-
-            {tab === "map" && <LeadMap result={result} focusId={focusId} onFocus={setFocusId} />}
-            {tab === "quad" && <RiskReward result={result} />}
-            {tab === "leads" && <LeadCards result={result} byId={byId} onLocate={locate} />}
+            {live.started && nav}
+            <DatasetReview started={live.started} onStart={startDemo} />
           </>
+        ) : (
+          <>
+            {loading && (
+              <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden">
+                <div className="animate-progress h-full w-1/3 bg-sun" />
+              </div>
+            )}
+
+            <header className="mb-6">
+              <h1 className="text-[28px] font-semibold tracking-tight">
+                {tab === "live" ? "Live classification" : "Who should we pitch first?"}
+              </h1>
+              <p className="mt-1 text-[15px] text-muted">
+                {result
+                  ? tab === "live"
+                    ? "Societies from your dataset stream through the trained model one at a time and are classified as they arrive."
+                    : <>Ranking housing societies for a <b className="text-ink">{result.params.capacity_mw} MW</b> farm
+                        at <b className="text-ink">{result.farm.name}</b>.</>
+                  : "Loading scenario…"}
+              </p>
+            </header>
+
+            {error && (
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                Can&apos;t reach the API at <code className="font-mono">{API_URL}</code> ({error}). Start it with{" "}
+                <code className="font-mono">uvicorn app.main:app --reload</code> from the <code>backend</code> folder.
+              </div>
+            )}
+
+            {result && (
+              <>
+                {tab !== "live" && <KpiCards kpis={result.kpis} />}
+
+                <div className={tab === "live" ? "" : "mt-7"}>{nav}</div>
+
+                <div key={tab} className="animate-fade-up">
+                  {tab === "live" && <LiveModel live={live} />}
+                  {tab === "map" && <LeadMap result={result} focusId={focusId} onFocus={setFocusId} />}
+                  {tab === "quad" && <RiskReward result={result} />}
+                  {tab === "leads" && <LeadCards result={result} byId={byId} onLocate={locate} />}
+                </div>
+            </>
+        )}
+        </>
         )}
 
         <p className="mt-8 text-xs text-muted">
-          Showing placeholder data. Connect the model output in <code>backend/app/mock_data.py</code>.
+          Data: <code>data/raw/maharashtra_solar_societies_synthetic.csv</code>. The ranking tabs show its Pending
+          societies, scored by the logistic regression model trained when the API starts. Map positions are city-level.
         </p>
       </main>
     </div>

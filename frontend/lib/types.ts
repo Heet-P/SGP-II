@@ -74,3 +74,52 @@ export interface ScenarioResult {
   societies: Society[];
   top_leads: Lead[];
 }
+
+// GET /api/model and POST /api/classify in backend/app/main.py.
+
+export interface ModelCard {
+  model: string;
+  dataset: string;
+  trained_at: string;
+  fit_ms: number;
+  train_rows: number;
+  test_rows: number;
+  pending_rows: number;
+  test_metrics: { accuracy: number; precision: number; recall: number; auc: number; baseline_accuracy: number };
+  features: string[];
+  districts: string[];
+  providers: string[];
+}
+
+export interface SocietyInput {
+  district: string;
+  current_provider: string;
+  num_flats: number;
+  avg_monthly_consumption_kwh: number;
+  current_tariff_rs_per_unit: number;
+  estimated_solar_tariff_rs_per_unit: number;
+  distance_to_solar_farm_km: number;
+  building_age_years: number;
+}
+
+export interface ClassifyResult {
+  prob: number;
+  predicted: "Converted" | "Rejected";
+  estimated_monthly_savings_rs: number;
+  latency_ms: number;
+  contributions: { feature: string; value: number }[];
+}
+
+// GET /api/dataset in backend/app/main.py: raw dataset rows plus each row's role in the demo.
+
+export type DatasetRow = Record<string, string | number> & { role: "Train" | "Held-out" | "Pending" };
+
+export interface DatasetPage {
+  total: number;
+  matching: number;
+  page: number;
+  page_size: number;
+  columns: string[];
+  counts: { outcome: Record<string, number>; role: Record<string, number> };
+  rows: DatasetRow[];
+}
