@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1100" width="3600" height="1100"
+     font-family="'Segoe UI', Inter, Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.28"/>
+    </filter>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27507f"/><stop offset="1" stop-color="#1b3a5f"/></linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f74c0"/><stop offset="1" stop-color="#205a9e"/></linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4ac12"/><stop offset="1" stop-color="#d98c00"/></linearGradient>
+    <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e9a50"/><stop offset="1" stop-color="#137a3c"/></linearGradient>
+    <linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c0223d"/><stop offset="1" stop-color="#97122a"/></linearGradient>
+    <marker id="head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#334155"/>
+    </marker>
+    <marker id="loophead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#97122a"/>
+    </marker>
+  </defs>
+
+  <!-- ============ arrows between stages ============ -->
+  <g stroke="#334155" stroke-width="26" stroke-linecap="round" fill="none">
+    <line x1="682" y1="440" x2="780" y2="440" marker-end="url(#head)"/>
+    <line x1="1392" y1="440" x2="1490" y2="440" marker-end="url(#head)"/>
+    <line x1="2102" y1="440" x2="2200" y2="440" marker-end="url(#head)"/>
+    <line x1="2812" y1="440" x2="2910" y2="440" marker-end="url(#head)"/>
+  </g>
+
+  <!-- ============ what-if feedback loop: dashboard → score & rank ============ -->
+  <path d="M3220,830 V935 H2510 V846" stroke="#97122a" stroke-width="18" fill="none"
+        stroke-dasharray="44 26" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#loophead)"/>
+  <g transform="translate(2865,1010)">
+    <rect x="-470" y="-52" width="940" height="104" rx="52" fill="#ffffff" stroke="#97122a" stroke-width="6"/>
+    <text x="0" y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#97122a">WHAT-IF: farm size · price · distance</text>
+  </g>
+
+  <!-- ============ stage boxes ============ -->
+  <!-- 1 DATASET -->
+  <g transform="translate(100,60)">
+    <rect width="560" height="760" rx="36" fill="url(#g1)" filter="url(#shadow)"/>
+    <text x="520" y="150" text-anchor="end" font-size="120" font-weight="900" fill="#ffffff" fill-opacity="0.18">01</text>
+    <circle cx="120" cy="120" r="78" fill="#ffffff" fill-opacity="0.16"/>
+    <g transform="translate(120,120)" stroke="#ffffff" stroke-width="10" fill="none" stroke-linecap="round">
+      <ellipse cx="0" cy="-34" rx="44" ry="15"/>
+      <path d="M-44,-34 V34 A44,15 0 0 0 44,34 V-34"/>
+      <path d="M-44,0 A44,15 0 0 0 44,0"/>
+    </g>
+    <text x="40" y="320" font-size="72" font-weight="800" fill="#ffffff">DATASET</text>
+    <text font-size="46" font-weight="500" fill="#ffffff" fill-opacity="0.94">
+      <tspan x="40" y="410">15,000 housing</tspan>
+      <tspan x="40" y="472">societies</tspan>
+      <tspan x="40" y="534">(Maharashtra)</tspan>
+    </text>
+    <rect x="40" y="650" width="480" height="76" rx="38" fill="#ffffff"/>
+    <text x="280" y="701" text-anchor="middle" font-size="40" font-weight="700" fill="#1b3a5f">CSV · pandas</text>
+  </g>
+
+  <!-- 2 PREPROCESS -->
+  <g transform="translate(810,60)">
+    <rect width="560" height="760" rx="36" fill="url(#g2)" filter="url(#shadow)"/>
+    <text x="520" y="150" text-anchor="end" font-size="120" font-weight="900" fill="#ffffff" fill-opacity="0.18">02</text>
+    <circle cx="120" cy="120" r="78" fill="#ffffff" fill-opacity="0.16"/>
+    <g transform="translate(120,120)" stroke="#ffffff" stroke-width="10" fill="none" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M-48,-40 H48 L12,4 V42 L-12,30 V4 Z"/>
+    </g>
+    <text x="40" y="320" font-size="72" font-weight="800" fill="#ffffff">PREPARE</text>
+    <text font-size="46" font-weight="500" fill="#ffffff" fill-opacity="0.94">
+      <tspan x="40" y="410">Scale &amp; encode</tspan>
+      <tspan x="40" y="472">features</tspan>
+      <tspan x="40" y="534">80 / 20 split</tspan>
+    </text>
+    <rect x="40" y="650" width="480" height="76" rx="38" fill="#ffffff"/>
+    <text x="280" y="701" text-anchor="middle" font-size="40" font-weight="700" fill="#205a9e">scikit-learn</text>
+  </g>
+
+  <!-- 3 ML MODEL -->
+  <g transform="translate(1520,60)">
+    <rect width="560" height="760" rx="36" fill="url(#g3)" filter="url(#shadow)"/>
+    <text x="520" y="150" text-anchor="end" font-size="120" font-weight="900" fill="#ffffff" fill-opacity="0.24">03</text>
+    <circle cx="120" cy="120" r="78" fill="#ffffff" fill-opacity="0.2"/>
+    <g transform="translate(120,120)" stroke="#ffffff" stroke-width="7" fill="#ffffff">
+      <g fill="none">
+        <path d="M-42,-30 L0,-44 M-42,-30 L0,0 M-42,-30 L0,44 M-42,30 L0,-44 M-42,30 L0,0 M-42,30 L0,44 M0,-44 L42,0 M0,0 L42,0 M0,44 L42,0"/>
+      </g>
+      <circle cx="-42" cy="-30" r="11"/><circle cx="-42" cy="30" r="11"/>
+      <circle cx="0" cy="-44" r="11"/><circle cx="0" cy="0" r="11"/><circle cx="0" cy="44" r="11"/>
+      <circle cx="42" cy="0" r="13"/>
+    </g>
+    <text x="40" y="320" font-size="72" font-weight="800" fill="#ffffff">ML MODEL</text>
+    <text font-size="46" font-weight="500" fill="#ffffff">
+      <tspan x="40" y="410">Logistic regression</tspan>
+      <tspan x="40" y="472">predicts chance</tspan>
+      <tspan x="40" y="534">to convert</tspan>
+    </text>
+    <rect x="40" y="650" width="480" height="76" rx="38" fill="#ffffff"/>
+    <text x="280" y="701" text-anchor="middle" font-size="40" font-weight="700" fill="#b77600">FastAPI backend</text>
+  </g>
+
+  <!-- 4 SCORE & RANK -->
+  <g transform="translate(2230,60)">
+    <rect width="560" height="760" rx="36" fill="url(#g4)" filter="url(#shadow)"/>
+    <text x="520" y="150" text-anchor="end" font-size="120" font-weight="900" fill="#ffffff" fill-opacity="0.18">04</text>
+    <circle cx="120" cy="120" r="78" fill="#ffffff" fill-opacity="0.16"/>
+    <g transform="translate(120,120)" fill="#ffffff">
+      <rect x="-46" y="4" width="24" height="40" rx="5"/>
+      <rect x="-12" y="-18" width="24" height="62" rx="5"/>
+      <rect x="22" y="-42" width="24" height="86" rx="5"/>
+    </g>
+    <text x="40" y="320" font-size="72" font-weight="800" fill="#ffffff">RANK</text>
+    <text font-size="46" font-weight="500" fill="#ffffff" fill-opacity="0.94">
+      <tspan x="40" y="410">Savings × chance</tspan>
+      <tspan x="40" y="472">Fit to farm</tspan>
+      <tspan x="40" y="534">capacity</tspan>
+    </text>
+    <rect x="40" y="650" width="480" height="76" rx="38" fill="#ffffff"/>
+    <text x="280" y="701" text-anchor="middle" font-size="40" font-weight="700" fill="#137a3c">Python · NumPy</text>
+  </g>
+
+  <!-- 5 DASHBOARD -->
+  <g transform="translate(2940,60)">
+    <rect width="560" height="760" rx="36" fill="url(#g5)" filter="url(#shadow)"/>
+    <text x="520" y="150" text-anchor="end" font-size="120" font-weight="900" fill="#ffffff" fill-opacity="0.18">05</text>
+    <circle cx="120" cy="120" r="78" fill="#ffffff" fill-opacity="0.16"/>
+    <g transform="translate(120,120)" stroke="#ffffff" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="-48" y="-40" width="96" height="64" rx="8"/>
+      <path d="M-32,8 L-12,-10 L4,2 L30,-22"/>
+      <path d="M-18,44 H18 M0,24 V44"/>
+    </g>
+    <text x="40" y="320" font-size="72" font-weight="800" fill="#ffffff">DASHBOARD</text>
+    <text font-size="46" font-weight="500" fill="#ffffff" fill-opacity="0.94">
+      <tspan x="40" y="410">Live scoring</tspan>
+      <tspan x="40" y="472">Map &amp; ranked leads</tspan>
+      <tspan x="40" y="534">Explanations</tspan>
+    </text>
+    <rect x="40" y="650" width="480" height="76" rx="38" fill="#ffffff"/>
+    <text x="280" y="701" text-anchor="middle" font-size="40" font-weight="700" fill="#97122a">Next.js · live stream</text>
+  </g>
+</svg>
