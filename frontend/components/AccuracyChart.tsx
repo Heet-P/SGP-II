@@ -16,7 +16,7 @@ export default function AccuracyChart({ history: all, baseline, testAccuracy }: 
 }) {
   const history = all.filter((h) => h.n >= MIN_ROWS);
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="rounded-2xl bg-surface shadow-card p-5">
       <h3 className="font-semibold">Accuracy as rows stream in</h3>
       <p className="text-xs text-muted">Only held-out rows count: the model never saw them during training.</p>
       <div className="mt-3 h-[230px]">

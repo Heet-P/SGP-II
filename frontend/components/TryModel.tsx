@@ -29,7 +29,8 @@ const RANGES: { key: keyof SocietyInput; label: string; min: number; max: number
   { key: "building_age_years", label: "Building age", min: 1, max: 39, step: 1, fmt: (v) => `${v} yrs` },
 ];
 
-export default function TryModel({ card }: { card: ModelCard | null }) {
+/** `bare` drops the card and title, for use inside a sheet that supplies its own. */
+export default function TryModel({ card, bare = false }: { card: ModelCard | null; bare?: boolean }) {
   const [input, setInput] = useState(DEFAULT);
   const [result, setResult] = useState<ClassifyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +56,10 @@ export default function TryModel({ card }: { card: ModelCard | null }) {
   const set = (patch: Partial<SocietyInput>) => setInput((s) => ({ ...s, ...patch }));
 
   return (
-    <section className="rounded-xl border border-line bg-surface p-5">
+    <section className={bare ? "p-4" : "rounded-2xl bg-surface shadow-card p-5"}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h3 className="font-semibold">Try it: classify a society that isn&apos;t in the dataset</h3>
+          {!bare && <h3 className="font-semibold">Try it: classify a society that isn&apos;t in the dataset</h3>}
           <p className="text-xs text-muted">Every change goes to the same model; nothing here is precomputed.</p>
         </div>
         <button onClick={() => setInput(DEFAULT)} className="text-xs font-medium text-muted hover:text-ink">Reset inputs</button>

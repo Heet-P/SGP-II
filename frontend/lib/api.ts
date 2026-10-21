@@ -39,3 +39,13 @@ export const getDataset = (
   );
   return request<DatasetPage>(`/api/dataset?${params}`, { signal });
 };
+
+export interface Explanation {
+  id: string;
+  contributions: { feature: string; value: number }[];
+  strength: string;
+  weakness: string | null;
+}
+
+export const getExplanation = (id: string, signal?: AbortSignal) =>
+  request<Explanation>(`/api/societies/${encodeURIComponent(id)}/explain`, { signal });

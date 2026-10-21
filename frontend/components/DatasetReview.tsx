@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Button, Icon } from "@/components/ui";
 import { getDataset } from "@/lib/api";
 import { num } from "@/lib/format";
 import type { DatasetPage, DatasetRow } from "@/lib/types";
@@ -38,7 +39,12 @@ const ROLES = [
 
 const OUTCOME_COLORS: Record<string, string> = { Converted: "#16a34a", Rejected: "#dc2626", Pending: "#0284c7" };
 
-export default function DatasetReview({ started, onStart }: { started: boolean; onStart: () => void }) {
+/** `embedded`: shown inside the app shell, which already supplies the page title. */
+export default function DatasetReview({ started, onStart, embedded = false }: {
+  started: boolean;
+  onStart: () => void;
+  embedded?: boolean;
+}) {
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [outcome, setOutcome] = useState("");
@@ -77,9 +83,13 @@ export default function DatasetReview({ started, onStart }: { started: boolean; 
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6400]">Step 1 · Review the data</div>
-          <h1 className="mt-1 text-[28px] font-semibold tracking-tight">The dataset the model works from</h1>
-          <p className="mt-1 text-[15px] text-muted">
+          {!embedded && (
+            <>
+              <div className="text-[12px] font-medium text-sun-ink">Step 1 of 2 · Review the data</div>
+              <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight">The dataset the model works from</h1>
+            </>
+          )}
+          <p className="mt-1 text-[14px] text-muted">
             <span className="font-mono text-[13px]">maharashtra_solar_societies_synthetic.csv</span>
             {data && <> · {num(data.total)} rows · {data.columns.length - 1} columns</>}
           </p>
@@ -98,19 +108,21 @@ export default function DatasetReview({ started, onStart }: { started: boolean; 
           const active = role === r.id;
           return (
             <button key={r.id} onClick={() => filter(() => setRole(active ? "" : r.id))}
-              className={`rounded-xl border p-4 text-left transition-shadow hover:shadow-sm ${active ? "ring-2" : ""}`}
-              style={{ background: r.bg, borderColor: active ? r.color : "#e7e5df", ["--tw-ring-color" as string]: r.color }}>
+              className={`rounded-2xl bg-surface p-4 text-left shadow-card transition-[box-shadow,transform] duration-150 active:scale-[0.99] ${active ? "ring-2" : "hover:bg-subtle"}`}
+              style={{ ["--tw-ring-color" as string]: r.color }}>
               <div className="flex items-baseline justify-between">
-                <span className="text-sm font-semibold" style={{ color: r.color }}>{r.id}</span>
-                <span className="text-2xl font-semibold tabular-nums">{data ? num(data.counts.role[r.id] ?? 0) : "—"}</span>
+                <span className="flex items-center gap-2 text-[13px] font-medium">
+                  <span className="h-2 w-2 rounded-full" style={{ background: r.color }} />{r.id}
+                </span>
+                <span className="text-[22px] font-semibold tracking-tight tabular-nums">{data ? num(data.counts.role[r.id] ?? 0) : "—"}</span>
               </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted">{r.text}</p>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{r.text}</p>
             </button>
           );
         })}
       </div>
 
-      <div className="rounded-xl border border-line bg-surface">
+      <div className="rounded-2xl bg-surface shadow-card">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <input value={q} onChange={(e) => filter(() => setQ(e.target.value))} placeholder="Search society, city or ID…"
             className="w-64 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-sun" />
@@ -209,9 +221,8 @@ function PageButton({ disabled, onClick, children }: { disabled: boolean; onClic
 
 function StartButton({ started, onStart }: { started: boolean; onStart: () => void }) {
   return (
-    <button onClick={onStart}
-      className="rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md">
-      {started ? "Back to live classification →" : "▶ Start live classification"}
-    </button>
+    <Button variant="primary" onClick={onStart} className="h-10 px-4">
+      {started ? <>Back to live model <Icon.arrow /></> : <><Icon.play /> Start live classification</>}
+    </Button>
   );
 }

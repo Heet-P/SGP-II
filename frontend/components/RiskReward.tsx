@@ -15,8 +15,8 @@ export default function RiskReward({ result }: { result: ScenarioResult }) {
   const ymax = Math.max(cut, ...eligible.map((s) => s.monthly_savings), 1) * 1.08;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_250px]">
-      <div className="h-[600px] rounded-xl border border-line bg-surface p-4 pt-6">
+    <div>
+      <div className="h-[520px] px-2 pt-4">
         {eligible.length === 0 ? (
           <Empty />
         ) : (
@@ -57,22 +57,10 @@ export default function RiskReward({ result }: { result: ScenarioResult }) {
         )}
       </div>
 
-      <aside className="space-y-4 rounded-xl border border-line bg-surface p-5 text-sm">
-        <h3 className="font-semibold">How to read this</h3>
-        {Object.entries(QUADRANTS).map(([name, q]) => (
-          <div key={name}>
-            <div className="flex items-center gap-2 font-medium">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: q.color }} />
-              {name}
-            </div>
-            <p className="mt-0.5 pl-4.5 text-xs text-muted">{q.desc}</p>
-          </div>
-        ))}
-        <p className="border-t border-line pt-4 text-xs leading-relaxed text-muted">
-          Outlined dots are in the allocation. Reward split is the median saving of eligible societies
-          ({inrShort(cut)}); risk split is a 50% conversion chance.
-        </p>
-      </aside>
+      <p className="px-5 pt-1 pb-4 text-[12px] leading-relaxed text-muted">
+        Right is safer, up is more valuable. Outlined dots are in the allocation; the dashed lines split at a 50%
+        chance to convert and the median saving ({inrShort(cut)}/month).
+      </p>
     </div>
   );
 }

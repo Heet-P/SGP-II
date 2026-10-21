@@ -1,35 +1,55 @@
 @import "tailwindcss";
 
-/* Light-only dashboard: these tokens are the single place to re-theme the app. */
+/*
+ * Light-only app. These tokens are the single place to re-theme it: warm neutrals,
+ * hairline borders and one accent (solar amber), used sparingly.
+ */
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --color-canvas: #f6f5f1;
+  --color-canvas: #fafaf9;
   --color-surface: #ffffff;
-  --color-line: #e7e5df;
-  --color-ink: #14161c;
-  --color-muted: #6b6f7b;
+  --color-subtle: #f3f3f1;
+  --color-line: #ebeae6;
+  --color-line-strong: #dddcd6;
+  --color-ink: #111214;
+  --color-muted: #75757d;
+  --color-faint: #a3a3a9;
   --color-sun: #f5b301;
   --color-sun-soft: #fff6d6;
+  --color-sun-ink: #8a6400;
+  --color-good: #16a34a;
+  --color-bad: #dc2626;
   --color-panel: #10141f;
   --color-panel-line: #222838;
   --color-panel-muted: #8b93a7;
+
+  /* Snappy ease-out for UI motion: fast start, gentle settle. */
+  --ease-snappy: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --shadow-card: 0 1px 2px rgb(17 18 20 / 0.04), 0 0 0 1px rgb(17 18 20 / 0.05);
+  --shadow-pop: 0 12px 32px -8px rgb(17 18 20 / 0.18), 0 0 0 1px rgb(17 18 20 / 0.06);
 }
 
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Range sliders in the dark scenario panel. */
+::selection {
+  background: var(--color-sun-soft);
+}
+
+/* Range sliders (scenario panel): thin track, amber fill, white thumb. */
 input[type="range"].range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--color-sun) var(--fill, 50%), var(--color-panel-line) var(--fill, 50%));
+  background: linear-gradient(to right, var(--color-ink) var(--fill, 50%), var(--color-line) var(--fill, 50%));
   outline: none;
   cursor: pointer;
 }
@@ -43,18 +63,22 @@ input[type="range"].range::-webkit-slider-thumb {
   height: 16px;
   border-radius: 999px;
   background: #fff;
-  border: 3px solid var(--color-sun);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  border: 1px solid var(--color-line-strong);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  transition: transform 150ms var(--ease-snappy);
+}
+input[type="range"].range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
 }
 input[type="range"].range::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: #fff;
-  border: 3px solid var(--color-sun);
+  border: 1px solid var(--color-line-strong);
 }
 input[type="range"].range:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--color-sun);
   outline-offset: 2px;
 }
 
@@ -124,11 +148,11 @@ input[type="range"].range:focus-visible::-webkit-slider-thumb {
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up {
-  animation: fade-up 0.35s ease-out;
+  animation: fade-up 220ms var(--ease-snappy);
 }
 
 /* Brief highlight when a live counter changes. */

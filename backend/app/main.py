@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnec
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 
+from .dataset import load_societies
 from .model import card, dataset_with_roles, explain, predict
 from .scoring import FARM_SITES, ScenarioParams, run_scenario
 from .stream import LiveClassifier
@@ -23,6 +24,8 @@ app = FastAPI(title="Solar Society Lead Platform API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
+    # Also accept any local dev port, since other projects may already be using 3000.
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,6 +75,22 @@ def dataset(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=100)
             "role": df["role"].value_counts().to_dict(),
         },
         "rows": view.iloc[start:start + page_size].to_dict(orient="records"),
+    }
+
+
+@app.get("/api/societies/{society_id}/explain")
+def explain_society(society_id: str):
+    """The model's reasoning for one Pending society: per-feature contributions to its score."""
+    df = load_societies()
+    match = df[df["society_id"] == society_id]
+    if match.empty:
+        raise HTTPException(status_code=404, detail=f"Unknown society '{society_id}'")
+    contrib = explain(match.iloc[0])
+    return {
+        "id": society_id,
+        "contributions": [{"feature": k, "value": round(v, 3)} for k, v in contrib.items()],
+        "strength": contrib.idxmax(),
+        "weakness": contrib.idxmin() if contrib.min() < 0 else None,
     }
 
 

@@ -70,8 +70,7 @@ export default function LeadMap({ result, focusId, onFocus }: Props) {
   const onMove = (e: MapLayerMouseEvent) => setHoverId((e.features?.[0]?.properties?.id as string) ?? null);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_250px]">
-      <div className="h-[600px] overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="relative h-full overflow-hidden">
         <Map
           ref={mapRef}
           initialViewState={initialView}
@@ -133,47 +132,19 @@ export default function LeadMap({ result, focusId, onFocus }: Props) {
             </Popup>
           )}
         </Map>
+
+      {/* Compact legend over the map; counts live in the page's stats. */}
+      <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface/95 px-3 py-2 text-[11px] shadow-card">
+        {Object.entries(QUADRANTS).map(([name, q]) => (
+          <span key={name} className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: q.color }} />{name}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5 text-muted">
+          <span className="h-2 w-2 rounded-full opacity-40" style={{ background: INELIGIBLE_COLOR }} />Ineligible
+        </span>
       </div>
-
-      <aside className="space-y-5 rounded-xl border border-line bg-surface p-5 text-sm">
-        <div>
-          <h3 className="mb-2.5 font-semibold">Legend</h3>
-          <ul className="space-y-1.5">
-            {Object.entries(QUADRANTS).map(([name, q]) => (
-              <LegendRow key={name} color={q.color} label={name}
-                count={result.quadrant_counts[name as keyof typeof QUADRANTS] ?? 0} />
-            ))}
-            <LegendRow color={INELIGIBLE_COLOR} label="Ineligible" count={result.quadrant_counts.Ineligible ?? 0} faded />
-          </ul>
-          <p className="mt-3 text-xs leading-relaxed text-muted">
-            Large outlined dots fit inside the farm&apos;s capacity. The dashed ring is the distance limit.
-            Positions are approximate (city level).
-          </p>
-        </div>
-        <div>
-          <h3 className="mb-2.5 font-semibold">Why excluded</h3>
-          <ul className="space-y-1.5">
-            {Object.entries(result.exclusions).map(([reason, n]) => (
-              <li key={reason} className="flex justify-between text-muted">
-                {reason} <span className="font-medium text-ink tabular-nums">{n}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </aside>
     </div>
-  );
-}
-
-function LegendRow({ color, label, count, faded }: { color: string; label: string; count: number; faded?: boolean }) {
-  return (
-    <li className="flex items-center justify-between">
-      <span className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: color, opacity: faded ? 0.4 : 1 }} />
-        {label}
-      </span>
-      <span className="font-medium tabular-nums">{count}</span>
-    </li>
   );
 }
 
