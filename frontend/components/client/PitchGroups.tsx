@@ -45,6 +45,7 @@ function GroupCard({ g }: { g: PitchGroup }) {
       `Pitch group ${g.rank} · ${g.area} (${g.risk}, ${g.reward})`,
       `${g.size} societies · ${num(g.flats)} flats · fills ${pct(g.fill)} of the farm`,
       `Expected to sign: ${g.expected_signups.toFixed(1)} of ${g.size} · combined savings ${inrShort(g.monthly_savings)}/month`,
+      `Simulated (${num(g.simulation.runs)} rounds): ${g.simulation.signups_low}–${g.simulation.signups_high} of ${g.size} sign 9 times out of 10`,
       "",
       ...g.members.map((m) => `- ${m.name}, ${m.city}: ${pct(m.prob)} chance, saves ${inrShort(m.monthly_savings)}/month`),
     ];
@@ -96,6 +97,8 @@ function GroupCard({ g }: { g: PitchGroup }) {
         </button>
       )}
 
+      <Simulation g={g} />
+
       <div className="mt-4 flex-1 px-5">
         <h4 className="mb-2 text-[11px] font-semibold tracking-[0.1em] text-faint uppercase">Why pitch them together</h4>
         <ul className="space-y-1.5">
@@ -111,6 +114,35 @@ function GroupCard({ g }: { g: PitchGroup }) {
         <Button size="sm" onClick={copy}><Icon.copy /> Copy group brief</Button>
       </div>
     </Card>
+  );
+}
+
+/** Monte Carlo result: how many societies signed across the simulated pitch rounds. */
+function Simulation({ g }: { g: PitchGroup }) {
+  const s = g.simulation;
+  const peak = Math.max(...s.distribution);
+  return (
+    <div className="mx-5 mt-4 rounded-xl bg-subtle px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h4 className="text-[11px] font-semibold tracking-[0.1em] text-faint uppercase">If you pitch them</h4>
+        <span className="text-[11px] text-faint">{num(s.runs)} simulated rounds</span>
+      </div>
+      <div className="mt-2.5 flex h-12 items-end gap-[2px]" aria-hidden>
+        {s.distribution.map((share, k) => (
+          <div key={k} className={cx("flex-1 rounded-[2px]",
+            k >= s.signups_low && k <= s.signups_high ? "bg-sun" : "bg-line-strong")}
+            style={{ height: `${Math.max(share / peak, 0.04) * 100}%` }}
+            title={`${k} sign: ${pct(share)} of rounds`} />
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-faint tabular-nums">
+        <span>0 sign</span><span>all {g.size}</span>
+      </div>
+      <p className="mt-2 text-[13px] leading-snug">
+        <span className="font-medium tabular-nums">{s.signups_low}–{s.signups_high} of {g.size}</span> sign 9 times out of 10.
+        The farm ends up at least half full in <span className="font-medium tabular-nums">{pct(s.chance_half_full)}</span> of rounds.
+      </p>
+    </div>
   );
 }
 

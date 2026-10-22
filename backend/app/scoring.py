@@ -1,8 +1,11 @@
 """Scenario scoring: eligibility, quadrants and capacity allocation."""
 
+from functools import lru_cache
+
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
+from scipy.optimize import Bounds, LinearConstraint, milp
 
 from .dataset import explain, load_societies
 from .model import predict, with_offer
@@ -43,6 +46,23 @@ def _base() -> pd.DataFrame:
     return load_societies()
 
 
+def knapsack(values, weights, capacity: float, must: int | None = None) -> np.ndarray | None:
+    """0/1 knapsack by integer linear programming (HiGHS via scipy).
+
+    Maximise sum(values · x) subject to sum(weights · x) <= capacity, x in {0, 1}.
+    `must` forces one item into the solution. Returns a boolean mask, or None if nothing fits.
+    """
+    values, weights = np.asarray(values, float), np.asarray(weights, float)
+    if len(values) == 0:
+        return None
+    lower = np.zeros(len(values))
+    if must is not None:
+        lower[must] = 1
+    res = milp(-values, constraints=LinearConstraint(weights[None, :], 0, capacity),
+               integrality=np.ones(len(values)), bounds=Bounds(lower, 1), options={"time_limit": 5})
+    return None if res.x is None else res.x > 0.5
+
+
 def run_scenario(p: ScenarioParams) -> dict:
     site = _SITES_BY_ID[p.site_id]
     df = _base().copy()
@@ -78,18 +98,28 @@ def run_scenario(p: ScenarioParams) -> dict:
         ["Prime", "Nurture", "Easy win"], default="Deprioritise")
     df.loc[~df["eligible"], "quadrant"] = "Ineligible"
 
-    # Expected value of pitching = P(convert) × monthly savings. Allocate farm
-    # output greedily to the highest expected-value societies until it is full.
+    # Expected value of pitching = P(convert) × monthly savings. Choose the set of
+    # societies with the highest total expected value that fits the farm's monthly
+    # output (0/1 knapsack, solved exactly by ILP). The greedy fill, highest expected
+    # value first until the next one does not fit, is kept for comparison.
     df["priority_score"] = (df["conversion_probability"] * df["monthly_savings_rs"]).where(df["eligible"], 0)
     monthly_capacity_kwh = p.capacity_mw * 1000 * 24 * 30 * CUF
     ranked = df[df["eligible"]].sort_values("priority_score", ascending=False)
-    within = ranked["avg_monthly_consumption_kwh"].cumsum() <= monthly_capacity_kwh
+    greedy = ranked["avg_monthly_consumption_kwh"].cumsum() <= monthly_capacity_kwh
+    chosen = knapsack(ranked["priority_score"], ranked["avg_monthly_consumption_kwh"], monthly_capacity_kwh)
     df["selected"] = False
-    df.loc[ranked.index[within], "selected"] = True
+    df.loc[ranked.index[greedy if chosen is None else chosen], "selected"] = True
     df["rank"] = df["priority_score"].rank(ascending=False, method="first").astype(int)
 
     sel = df[df["selected"]]
     used_kwh = float(sel["avg_monthly_consumption_kwh"].sum())
+    allocation = {
+        "method": "ILP (0/1 knapsack)" if chosen is not None else "Greedy",
+        "expected_value": float(sel["priority_score"].sum()),
+        "greedy_expected_value": float(ranked.loc[greedy, "priority_score"].sum()),
+        "greedy_used_kwh": float(ranked.loc[greedy, "avg_monthly_consumption_kwh"].sum()),
+        "greedy_count": int(greedy.sum()),
+    }
 
     top = sel.sort_values("priority_score", ascending=False).head(p.top_n)
     leads = []
@@ -115,6 +145,7 @@ def run_scenario(p: ScenarioParams) -> dict:
             "avg_conversion": float(sel["conversion_probability"].mean()) if len(sel) else None,
             "flats_reached": int(sel["active_flats"].sum()),
         },
+        "allocation": allocation,
         "reward_cut": reward_cut,
         "quadrant_counts": df["quadrant"].value_counts().to_dict(),
         "exclusions": df.loc[~df["eligible"], "ineligible_reason"].value_counts().to_dict(),
@@ -147,32 +178,44 @@ def _societies_payload(df: pd.DataFrame) -> list[dict]:
 # ------------------------------------------------------------------ pitch groups
 
 GROUP_RADIUS_KM = 15
+# Each group is chosen from the seed's best neighbours only; this keeps every ILP small
+# and changes the groups' expected value by under 1% against using all neighbours.
+GROUP_CANDIDATES = 40
+SIMULATION_RUNS = 10_000
 
 
 def run_groups(p: ScenarioParams, max_groups: int = 6) -> dict:
+    # Building groups solves dozens of small ILPs (about 1–2 s), so results are cached per scenario.
+    return _groups(p.model_dump_json(), max_groups)
+
+
+@lru_cache(maxsize=64)
+def _groups(params_json: str, max_groups: int) -> dict:
     """Groups of nearby eligible societies to pitch together, each sized to fill the farm.
 
-    Greedy: take the best unassigned society as a seed, add the best unassigned neighbours
-    within GROUP_RADIUS_KM until the farm's monthly output is used up, repeat. Groups are
-    then ranked by expected value (sum of chance × savings) and rated for risk and reward.
+    Take the best unassigned society as a seed. Among the unassigned societies within
+    GROUP_RADIUS_KM, choose the set with the highest expected value that fits the farm
+    (ILP knapsack, seed included), repeat. Groups are then ranked by expected value
+    (sum of chance × savings), rated for risk and reward, and simulated (Monte Carlo).
     """
-    result = run_scenario(p)
+    result = run_scenario(ScenarioParams.model_validate_json(params_json))
     capacity = result["kpis"]["capacity_kwh"]
     pool = sorted((s for s in result["societies"] if s["eligible"]), key=lambda s: -s["priority_score"])
+    lats = np.array([s["lat"] for s in pool])
+    lons = np.array([s["lon"] for s in pool])
     assigned: set[str] = set()
     groups = []
     for seed in pool:
-        if seed["id"] in assigned:
+        if seed["id"] in assigned or seed["consumption_kwh"] > capacity:
             continue
-        near = [s for s in pool if s["id"] not in assigned
-                and haversine_km(seed["lat"], seed["lon"], s["lat"], s["lon"]) <= GROUP_RADIUS_KM]
-        members, load = [], 0.0
-        for s in near:
-            if load + s["consumption_kwh"] <= capacity:
-                members.append(s)
-                load += s["consumption_kwh"]
-        if not members:
+        # The seed is the best unassigned society, so it comes first in `near`.
+        within = haversine_km(seed["lat"], seed["lon"], lats, lons) <= GROUP_RADIUS_KM
+        near = [s for s, w in zip(pool, within) if w and s["id"] not in assigned][:GROUP_CANDIDATES]
+        chosen = knapsack([s["priority_score"] for s in near], [s["consumption_kwh"] for s in near], capacity, must=0)
+        if chosen is None:
             continue
+        members = [s for s, keep in zip(near, chosen) if keep]
+        load = float(sum(s["consumption_kwh"] for s in members))
         assigned.update(m["id"] for m in members)
         groups.append(_describe_group(members, load, capacity))
         if len(groups) >= max_groups * 6:
@@ -224,9 +267,33 @@ def _describe_group(members: list[dict], load: float, capacity: float) -> dict:
         "monthly_savings": savings,
         "expected_value": float((probs * np.array([m["monthly_savings"] for m in members])).sum()),
         "distance_km": float(np.mean([m["distance_km"] for m in members])),
+        "simulation": _simulate(probs, np.array([m["consumption_kwh"] for m in members]), capacity),
         "why": why,
         "members": [
             {k: m[k] for k in ("id", "name", "city", "num_flats", "prob", "monthly_savings", "distance_km")}
             for m in sorted(members, key=lambda m: -m["prob"])
         ],
+    }
+
+
+def _simulate(probs: np.ndarray, kwh: np.ndarray, capacity: float, runs: int = SIMULATION_RUNS) -> dict:
+    """Monte Carlo: pitch the group `runs` times; each society signs with its own probability.
+
+    Gives the spread around the expected sign-ups: the range that holds 9 times out of 10,
+    the full distribution, and how often the signed societies fill the farm.
+    """
+    rng = np.random.default_rng(0)
+    signed = rng.random((runs, len(probs))) < probs
+    signups = signed.sum(axis=1)
+    fill = signed @ kwh / capacity if capacity else np.zeros(runs)
+    low, high = np.quantile(signups, [0.05, 0.95], method="inverted_cdf")
+    return {
+        "runs": runs,
+        "signups_low": int(low),
+        "signups_high": int(high),
+        "distribution": (np.bincount(signups, minlength=len(probs) + 1) / runs).round(4).tolist(),
+        "fill_low": float(np.quantile(fill, 0.05)),
+        "fill_high": float(np.quantile(fill, 0.95)),
+        "chance_half_full": float((fill >= 0.5).mean()),
+        "chance_none": float((signups == 0).mean()),
     }

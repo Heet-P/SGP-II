@@ -22,11 +22,16 @@ interface Props {
 
 /** The one-glance view: four numbers, where the leads are, and who to call first. */
 export default function OverviewPage({ result, focusId, onSelect, onViewLeads }: Props) {
-  const { kpis } = result;
+  const { kpis, allocation } = result;
   const used = kpis.capacity_kwh ? kpis.used_kwh / kpis.capacity_kwh : 0;
-  // Allocated societies first, then the next few in line (what extra capacity would unlock).
-  const top = result.societies.filter((s) => s.eligible).sort((a, b) => a.rank - b.rank).slice(0, 8);
-  const firstWaiting = top.findIndex((s) => !s.selected);
+  const greedyUsed = kpis.capacity_kwh ? allocation.greedy_used_kwh / kpis.capacity_kwh : 0;
+  const gain = allocation.greedy_expected_value ? allocation.expected_value / allocation.greedy_expected_value - 1 : 0;
+  // Allocated societies first, then the best ones left out (the optimiser can skip a
+  // high-ranked society that does not fit well, so this is not simply the top of the ranking).
+  const eligible = result.societies.filter((s) => s.eligible).sort((a, b) => a.rank - b.rank);
+  const chosen = eligible.filter((s) => s.selected);
+  const top = [...chosen, ...eligible.filter((s) => !s.selected)].slice(0, 8);
+  const firstWaiting = chosen.length < top.length ? chosen.length : -1;
   const byId = new Map(result.societies.map((s) => [s.id, s]));
   const excluded = Object.entries(result.exclusions).sort((a, b) => b[1] - a[1]);
 
@@ -52,6 +57,18 @@ export default function OverviewPage({ result, focusId, onSelect, onViewLeads }:
           ))}.
         </p>
       )}
+      {allocation.method.startsWith("ILP") && kpis.selected_count > 0 && (
+        <p className="-mt-2 px-1 text-[13px] text-muted">
+          Farm filled by integer linear programming (0/1 knapsack):{" "}
+          <span className="text-ink tabular-nums">{inrShort(allocation.expected_value)}</span> expected value a month
+          {allocation.greedy_count === 0
+            ? <>. A simple greedy fill would pick none: the top society alone is larger than the farm.</>
+            : gain >= 0.005
+              ? <>, <span className="font-medium text-good tabular-nums">+{pct(gain)}</span> over a simple greedy fill
+                  (which uses {pct(greedyUsed)} of the farm).</>
+              : <>, the same as a simple greedy fill.</>}
+        </p>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <Card className="overflow-hidden">
@@ -62,7 +79,7 @@ export default function OverviewPage({ result, focusId, onSelect, onViewLeads }:
         </Card>
 
         <Card className="flex flex-col">
-          <CardHeader title="Pitch these first" hint="Highest expected value inside the farm's capacity"
+          <CardHeader title="Pitch these first" hint="Best total expected value for the farm"
             action={<Button variant="ghost" size="sm" onClick={onViewLeads}>All leads <Icon.arrow /></Button>} />
           <ol className="flex-1 px-2 pb-2">
             {top.length === 0 && (
@@ -74,7 +91,7 @@ export default function OverviewPage({ result, focusId, onSelect, onViewLeads }:
               <li key={s.id}>
                 {i === firstWaiting && (
                   <div className="mx-3 mt-2 mb-1 border-t border-line pt-3 text-[11px] font-medium tracking-wide text-faint uppercase">
-                    Next in line · needs more capacity
+                    Next in line · not in the best mix for this farm
                   </div>
                 )}
                 <button onClick={() => onSelect(s)}

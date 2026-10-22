@@ -110,7 +110,7 @@ export default function ClientPortal() {
             <h2 className="text-[20px] font-semibold tracking-tight">Pitch these together</h2>
             {groups && (
               <p className="text-[13px] text-muted">
-                Each group fills your {capacity} MW farm ({num(groups.capacity_kwh / 1000)} MWh a month), ranked by expected savings.
+                Each group fills your {capacity} MW farm ({num(groups.capacity_kwh / 1000)} MWh a month), chosen by integer linear programming and ranked by expected savings.
               </p>
             )}
           </div>

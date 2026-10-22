@@ -126,7 +126,7 @@ export default function LeadMap({ result, focusId, onFocus }: Props) {
                 </div>
                 <div>{popup.distance_km} km from farm</div>
                 <div className="mt-1 font-medium" style={{ color: popup.selected ? "#4ade80" : popup.eligible ? "#fbbf24" : "#f87171" }}>
-                  {popup.selected ? "In allocation" : popup.eligible ? "Eligible · over capacity" : popup.reason}
+                  {popup.selected ? "In allocation" : popup.eligible ? "Eligible · not in the best mix" : popup.reason}
                 </div>
               </div>
             </Popup>

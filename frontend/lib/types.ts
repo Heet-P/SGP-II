@@ -68,6 +68,14 @@ export interface ScenarioResult {
     avg_conversion: number | null;
     flats_reached: number;
   };
+  /** How the farm was filled: exact ILP knapsack, with the simple greedy fill for comparison. */
+  allocation: {
+    method: string;
+    expected_value: number;
+    greedy_expected_value: number;
+    greedy_used_kwh: number;
+    greedy_count: number;
+  };
   reward_cut: number;
   quadrant_counts: Partial<Record<Quadrant, number>>;
   exclusions: Record<string, number>;
@@ -159,6 +167,18 @@ export interface PitchGroup {
   monthly_savings: number;
   expected_value: number;
   distance_km: number;
+  /** Monte Carlo: the group pitched `runs` times, each society signing with its own probability. */
+  simulation: {
+    runs: number;
+    signups_low: number;
+    signups_high: number;
+    /** Share of runs with 0, 1, 2 … sign-ups. */
+    distribution: number[];
+    fill_low: number;
+    fill_high: number;
+    chance_half_full: number;
+    chance_none: number;
+  };
   risk: "Low risk" | "Medium risk" | "High risk";
   reward: "High reward" | "Steady reward";
   why: string[];
