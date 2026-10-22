@@ -25,7 +25,8 @@ export default function OverviewPage({ result, focusId, onSelect, onViewLeads }:
   const { kpis } = result;
   const used = kpis.capacity_kwh ? kpis.used_kwh / kpis.capacity_kwh : 0;
   // Allocated societies first, then the next few in line (what extra capacity would unlock).
-  const top = result.societies.filter((s) => s.eligible).sort((a, b) => a.rank - b.rank).slice(0, 8);
+  const top = result.societies.filter((s) => s.eligible)
+    .sort((a, b) => Number(b.selected) - Number(a.selected) || a.rank - b.rank).slice(0, 8);
   const firstWaiting = top.findIndex((s) => !s.selected);
   const byId = new Map(result.societies.map((s) => [s.id, s]));
   const excluded = Object.entries(result.exclusions).sort((a, b) => b[1] - a[1]);
@@ -62,7 +63,7 @@ export default function OverviewPage({ result, focusId, onSelect, onViewLeads }:
         </Card>
 
         <Card className="flex flex-col">
-          <CardHeader title="Pitch these first" hint="Highest expected value inside the farm's capacity"
+          <CardHeader title="Pitch these first" hint="Most expected savings per unit of the farm's output"
             action={<Button variant="ghost" size="sm" onClick={onViewLeads}>All leads <Icon.arrow /></Button>} />
           <ol className="flex-1 px-2 pb-2">
             {top.length === 0 && (

@@ -78,14 +78,20 @@ def run_scenario(p: ScenarioParams) -> dict:
         ["Prime", "Nurture", "Easy win"], default="Deprioritise")
     df.loc[~df["eligible"], "quadrant"] = "Ineligible"
 
-    # Expected value of pitching = P(convert) × monthly savings. Allocate farm
-    # output greedily to the highest expected-value societies until it is full.
-    df["priority_score"] = (df["conversion_probability"] * df["monthly_savings_rs"]).where(df["eligible"], 0)
+    # Farm output is the scarce resource, so rank by expected value per kWh it uses:
+    # P(convert) × savings per unit (= P × monthly savings / monthly kWh). Allocate
+    # greedily down that ranking, skipping any society that no longer fits so smaller
+    # ones further down can use the leftover capacity.
+    df["priority_score"] = (df["conversion_probability"]
+                            * (df["current_tariff_rs_per_unit"] - df["solar_offer_rs_per_unit"])).where(df["eligible"], 0)
     monthly_capacity_kwh = p.capacity_mw * 1000 * 24 * 30 * CUF
     ranked = df[df["eligible"]].sort_values("priority_score", ascending=False)
-    within = ranked["avg_monthly_consumption_kwh"].cumsum() <= monthly_capacity_kwh
     df["selected"] = False
-    df.loc[ranked.index[within], "selected"] = True
+    left = monthly_capacity_kwh
+    for i, kwh in ranked["avg_monthly_consumption_kwh"].items():
+        if kwh <= left:
+            df.at[i, "selected"] = True
+            left -= kwh
     df["rank"] = df["priority_score"].rank(ascending=False, method="first").astype(int)
 
     sel = df[df["selected"]]

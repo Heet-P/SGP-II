@@ -98,7 +98,7 @@ export default function Dashboard() {
       return <>Ranking {num(result.kpis.total_count)} societies for a <span className="text-ink">{result.params.capacity_mw} MW</span> farm
         at <span className="text-ink">{result.farm.name.replace(" (reference site)", "")}</span>.</>;
     }
-    if (page === "leads") return "Every eligible society, ranked by expected value. Open any row for the full picture.";
+    if (page === "leads") return "Every eligible society, ranked by expected savings per unit of farm output. Open any row for the full picture.";
     if (page === "live") return "Rows from your dataset stream through the trained model and are scored as they arrive.";
     return null;
   }, [page, result]);
