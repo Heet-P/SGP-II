@@ -5,6 +5,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from .dataset import explain, load_societies
+from .model import predict, with_offer
 
 FARM_SITES = [
     {"id": "pune", "name": "Pune (reference site)", "lat": 18.5204, "lon": 73.8567},
@@ -53,6 +54,10 @@ def run_scenario(p: ScenarioParams) -> dict:
     df["monthly_savings_rs"] = ((df["current_tariff_rs_per_unit"] - df["solar_offer_rs_per_unit"])
                                 * df["avg_monthly_consumption_kwh"]).round(0)
     df["savings_per_flat_rs"] = (df["monthly_savings_rs"] / df["active_flats"]).round(0)
+
+    # Re-score with this scenario's distance and price, not the dataset's fixed ones.
+    df = with_offer(df, df["distance_km"], df["solar_offer_rs_per_unit"])
+    df["conversion_probability"] = predict(df).round(3)
 
     df["ineligible_reason"] = np.select(
         [df["distance_km"] > p.max_distance_km,

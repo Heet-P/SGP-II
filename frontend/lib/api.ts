@@ -1,5 +1,5 @@
 import type {
-  ClassifyResult, DatasetPage, FarmSite, GroupsResult, ModelCard, ScenarioParams, ScenarioResult, SocietyInput,
+  ClassifyResult, DatasetPage, FarmSite, GroupsResult, ModelCard, ScenarioParams, ScenarioResult, Society, SocietyInput,
 } from "./types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -47,8 +47,12 @@ export interface Explanation {
   weakness: string | null;
 }
 
-export const getExplanation = (id: string, signal?: AbortSignal) =>
-  request<Explanation>(`/api/societies/${encodeURIComponent(id)}/explain`, { signal });
+// Pass the scenario's distance and offer so the reasoning matches the scenario's score.
+export const getExplanation = (s: Pick<Society, "id" | "distance_km" | "offer">, signal?: AbortSignal) =>
+  request<Explanation>(
+    `/api/societies/${encodeURIComponent(s.id)}/explain?distance_km=${s.distance_km}&offer=${s.offer}`,
+    { signal },
+  );
 
 export const classifyBatch = (societies: SocietyInput[]) =>
   request<{ results: ClassifyResult[] }>("/api/classify/batch", {

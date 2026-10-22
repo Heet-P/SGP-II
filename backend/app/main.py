@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 
 from .dataset import load_societies
-from .model import card, dataset_with_roles, explain, predict, reasons
+from .model import card, dataset_with_roles, explain, predict, reasons, with_offer
 from .scoring import FARM_SITES, ScenarioParams, run_groups, run_scenario
 from .stream import LiveClassifier
 
@@ -79,13 +79,20 @@ def dataset(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=100)
 
 
 @app.get("/api/societies/{society_id}/explain")
-def explain_society(society_id: str):
-    """The model's reasoning for one Pending society: per-feature contributions to its score."""
+def explain_society(society_id: str, distance_km: float | None = Query(None, ge=0),
+                    offer: float | None = Query(None, gt=0)):
+    """The model's reasoning for one Pending society: per-feature contributions to its score.
+
+    Pass the scenario's distance_km and offer (₹/unit) so the reasoning matches the scenario's score.
+    """
     df = load_societies()
     match = df[df["society_id"] == society_id]
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Unknown society '{society_id}'")
-    contrib = explain(match.iloc[0])
+    row = match.iloc[[0]]
+    if distance_km is not None and offer is not None:
+        row = with_offer(row, distance_km, offer)
+    contrib = explain(row.iloc[0])
     return {
         "id": society_id,
         "contributions": [{"feature": k, "value": round(v, 3)} for k, v in contrib.items()],

@@ -72,6 +72,7 @@ def trained() -> dict:
     pred = (proba >= 0.5).astype(int)
     return {
         "pipe": pipe,
+        "ranges": (X_train[NUMERIC].min(), X_train[NUMERIC].max()),
         "test_index": X_test.index,
         "card": {
             "model": "Logistic regression (class-balanced)",
@@ -100,8 +101,26 @@ def _feature_names(pipe: Pipeline) -> list[str]:
     return list(pipe.named_steps["preprocess"].get_feature_names_out())
 
 
+def with_offer(rows: pd.DataFrame, distance_km, solar_tariff) -> pd.DataFrame:
+    """Rows with the offer-dependent model inputs set to a given farm distance and solar price,
+    replacing the dataset's fixed values so predictions follow the scenario."""
+    rows = rows.assign(distance_to_solar_farm_km=distance_km, estimated_solar_tariff_rs_per_unit=solar_tariff)
+    rows["estimated_monthly_savings_rs"] = ((rows["current_tariff_rs_per_unit"] - solar_tariff)
+                                            * rows["avg_monthly_consumption_kwh"])
+    return rows
+
+
+def _clamped(rows: pd.DataFrame) -> pd.DataFrame:
+    """Model inputs with numeric features capped to the training range. A linear model keeps
+    extending its trend past the data it saw, which pushes far-off scenarios to 0% or 100%."""
+    low, high = trained()["ranges"]
+    rows = rows[FEATURES].copy()
+    rows[NUMERIC] = rows[NUMERIC].astype(float).clip(low, high, axis=1)
+    return rows
+
+
 def predict(rows: pd.DataFrame) -> np.ndarray:
-    return trained()["pipe"].predict_proba(rows[FEATURES])[:, 1]
+    return trained()["pipe"].predict_proba(_clamped(rows))[:, 1]
 
 
 def _contributions(row: pd.Series | dict) -> dict[str, float]:
@@ -111,7 +130,7 @@ def _contributions(row: pd.Series | dict) -> dict[str, float]:
     relative to the dropped reference category, summed over each one-hot group.
     """
     pipe = trained()["pipe"]
-    frame = pd.DataFrame([dict(row)])[FEATURES]
+    frame = _clamped(pd.DataFrame([dict(row)]))
     x = pipe.named_steps["preprocess"].transform(frame)
     x = x.toarray()[0] if hasattr(x, "toarray") else np.asarray(x)[0]
     coef = pipe.named_steps["clf"].coef_[0]

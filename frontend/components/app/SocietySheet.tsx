@@ -28,7 +28,7 @@ export default function SocietySheet({ society, total, onClose, onShowOnMap }: P
   useEffect(() => {
     if (!society) return;
     const ctrl = new AbortController();
-    getExplanation(society.id, ctrl.signal).then(setWhy).catch(() => {});
+    getExplanation(society, ctrl.signal).then(setWhy).catch(() => {});
     return () => ctrl.abort();
   }, [society]);
 
